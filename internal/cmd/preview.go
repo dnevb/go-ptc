@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/dan/plymouth-theme-creator/internal/preview"
 	"github.com/spf13/cobra"
 )
 
@@ -12,8 +11,7 @@ var previewCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		fmt.Printf("preview: dir=%s\n", dir)
-		return fmt.Errorf("not implemented")
+		return preview.Preview(dir)
 	},
 }
 
