@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/dan/plymouth-theme-creator/internal/preview"
+	"github.com/dnevb/go-ptc/internal/preview"
 	"github.com/spf13/cobra"
 )
 

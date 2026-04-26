@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dan/plymouth-theme-creator/internal/extract"
-	"github.com/dan/plymouth-theme-creator/internal/normalize"
-	"github.com/dan/plymouth-theme-creator/internal/probe"
+	"github.com/dnevb/go-ptc/internal/extract"
+	"github.com/dnevb/go-ptc/internal/normalize"
+	"github.com/dnevb/go-ptc/internal/probe"
 )
 
 type CreateOpts struct {

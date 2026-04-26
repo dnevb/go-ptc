@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/dan/plymouth-theme-creator/internal/plymouth"
+	"github.com/dnevb/go-ptc/internal/plymouth"
 )
 
 var nameRe = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)

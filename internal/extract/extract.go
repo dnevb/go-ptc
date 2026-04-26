@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dan/plymouth-theme-creator/internal/probe"
+	"github.com/dnevb/go-ptc/internal/probe"
 )
 
 type Options struct {

@@ -48,7 +48,7 @@ T8|x|impl `ptc install` → validate target + copy to system dir|V3,V6,V7
 T9|x|impl `ptc preview` → exec `plymouthd --test`|V6
 T10|x|tests for media probe, frame extraction, validators|§V
 T11|x|remove ffprobe dep, switch probe to ffmpeg stderr / Go decoders|§C
-T12|.|update go.mod module path to `github.com/dnevb/go-ptc`, verify go install|§C,§I
+T12|x|update go.mod module path to `github.com/dnevb/go-ptc`, verify go install|§C,§I
 
 ## §B BUGS
 id|date|cause|fix

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/dan/plymouth-theme-creator/internal/cmd"
+import "github.com/dnevb/go-ptc/internal/cmd"
 
 func main() {
 	cmd.Execute()

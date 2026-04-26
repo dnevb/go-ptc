@@ -12,8 +12,13 @@ CLI tool converting images, GIFs, and videos into Plymouth boot-splash themes. S
 ## Install
 
 ```bash
-go build ./cmd/ptc
-sudo cp ptc /usr/local/bin/
+go install github.com/dnevb/go-ptc/cmd/ptc@latest
+```
+
+Or build from source:
+
+```bash
+go build -o ~/.local/bin/ptc ./cmd/ptc
 ```
 
 ## Usage
@@ -42,7 +47,3 @@ sudo ptc preview mytheme
 ```
 
 Runs `plymouthd` + `plymouth --show-splash` for 5 seconds.
-
-## License
-
-MIT

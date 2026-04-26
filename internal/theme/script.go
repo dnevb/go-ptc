@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/dan/plymouth-theme-creator/internal/script"
+	"github.com/dnevb/go-ptc/internal/script"
 )
 
 type ScriptOpts struct {

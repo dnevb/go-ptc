@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/dan/plymouth-theme-creator/internal/theme"
+	"github.com/dnevb/go-ptc/internal/theme"
 	"github.com/spf13/cobra"
 )
 

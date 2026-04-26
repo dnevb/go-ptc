@@ -1,4 +1,4 @@
-module github.com/dan/plymouth-theme-creator
+module github.com/dnevb/go-ptc
 
 go 1.24
 
