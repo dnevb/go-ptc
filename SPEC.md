@@ -40,7 +40,7 @@ T4|x|impl image resize/normalize pipeline (boot-safe)|V8
 T5|x|impl `ptc create` with flags → generate .plymouth, .script, assets/|V1,V2,V4,V5
 T6|x|impl `.plymouth` parser/validator|V2,V3
 T7|x|impl `.script` validator (token-based, API whitelist)|V4
-T8|.|impl `ptc install` → validate target + copy to system dir|V3,V6,V7
+T8|x|impl `ptc install` → validate target + copy to system dir|V3,V6,V7
 T9|.|impl `ptc preview` → exec `plymouthd --test`|V6
 T10|.|tests for media probe, frame extraction, validators|§V
 

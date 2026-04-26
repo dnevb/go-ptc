@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/dan/plymouth-theme-creator/internal/install"
 	"github.com/spf13/cobra"
 )
 
@@ -14,8 +15,11 @@ var installCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		fmt.Printf("install: dir=%s system-dir=%s\n", dir, installSystemDir)
-		return fmt.Errorf("not implemented")
+		if err := install.Install(dir, installSystemDir); err != nil {
+			return err
+		}
+		fmt.Printf("installed %s → %s\n", dir, installSystemDir)
+		return nil
 	},
 }
 
