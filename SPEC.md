@@ -35,7 +35,7 @@ V8: ∀ extracted frames → dimensions ≤ config.max_res (default 1920×1080).
 id|status|task|cites
 T1|x|scaffold `cmd/ptc` with cobra, `go.mod`|§C
 T2|x|impl media probe (ffprobe wrap): type, dims, duration, frames|§C
-T3|.|impl frame extraction: gif→png frames, video→png frames via ffmpeg|V8
+T3|x|impl frame extraction: gif→png frames, video→png frames via ffmpeg|V8
 T4|.|impl image resize/normalize pipeline (boot-safe)|V8
 T5|.|impl `ptc create` with flags → generate .plymouth, .script, assets/|V1,V2,V4,V5
 T6|.|impl `.plymouth` parser/validator|V2,V3
