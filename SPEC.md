@@ -5,6 +5,8 @@ CLI tool `ptc` converts media (images, GIFs, videos) into Plymouth boot-splash t
 
 ## §C CONSTRAINTS
 - Go 1.24+. single static binary.
+- Distributable via `go install github.com/dnevb/go-ptc/cmd/ptc@latest`.
+- Module path = `github.com/dnevb/go-ptc`.
 - Linux-only. Plymouth ! available elsewhere.
 - Input: png, jpg, gif, mp4, webm, mov. ? svg.
 - Output: standard Plymouth theme dir (`/usr/share/plymouth/themes/<name>/`).
@@ -15,6 +17,7 @@ CLI tool `ptc` converts media (images, GIFs, videos) into Plymouth boot-splash t
 - Minimal code comments
 
 ## §I INTERFACES
+- install: `go install github.com/dnevb/go-ptc/cmd/ptc@latest` → binary.
 - cmd: `ptc create <name> <media...> [--fps N] [--res WxH] [--loop] [--transition fade|none] [--output-dir path]` → generate theme from media files.
 - cmd: `ptc install <dir> [--system-dir path]` → copy to system themes dir. requires root.
 - cmd: `ptc preview <dir>` → run `plymouthd --test` with theme. requires root.
@@ -45,6 +48,7 @@ T8|x|impl `ptc install` → validate target + copy to system dir|V3,V6,V7
 T9|x|impl `ptc preview` → exec `plymouthd --test`|V6
 T10|x|tests for media probe, frame extraction, validators|§V
 T11|x|remove ffprobe dep, switch probe to ffmpeg stderr / Go decoders|§C
+T12|.|update go.mod module path to `github.com/dnevb/go-ptc`, verify go install|§C,§I
 
 ## §B BUGS
 id|date|cause|fix
