@@ -6,7 +6,7 @@ CLI tool converting images, GIFs, and videos into Plymouth boot-splash themes. S
 
 - Go 1.24+ (build from source)
 - Linux (Plymouth only runs on Linux)
-- `ffmpeg` + `ffprobe` (video/GIF processing)
+- `ffmpeg` (video/GIF processing)
 - `plymouthd` (preview only)
 
 ## Install

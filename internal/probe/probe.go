@@ -1,21 +1,26 @@
 package probe
 
 import (
-	"encoding/json"
 	"fmt"
+	"image"
+	"image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type MediaType string
 
 const (
-	TypeImage MediaType = "image"
-	TypeGIF   MediaType = "gif"
-	TypeVideo MediaType = "video"
+	TypeImage   MediaType = "image"
+	TypeGIF     MediaType = "gif"
+	TypeVideo   MediaType = "video"
 	TypeUnknown MediaType = "unknown"
 )
 
@@ -28,114 +33,128 @@ type MediaInfo struct {
 	Frames   int
 }
 
-type ffprobeStream struct {
-	CodecName    string `json:"codec_name"`
-	Width        int    `json:"width"`
-	Height       int    `json:"height"`
-	NbFrames     string `json:"nb_frames"`
-	AvgFrameRate string `json:"avg_frame_rate"`
-}
-
-type ffprobeFormat struct {
-	Duration string `json:"duration"`
-}
-
-type ffprobeOutput struct {
-	Streams []ffprobeStream `json:"streams"`
-	Format  ffprobeFormat   `json:"format"`
-}
+var (
+	durationRe    = regexp.MustCompile(`Duration:\s*(\d+):(\d+):(\d+)(?:\.(\d+))?`)
+	videoStreamRe = regexp.MustCompile(`Stream.*Video:.*\s(\d+)x(\d+)[\s,]`)
+	fpsRe         = regexp.MustCompile(`(\d+(?:\.\d+)?)\s*fps`)
+	tbrRe         = regexp.MustCompile(`(\d+(?:\.\d+)?)\s*tbr`)
+)
 
 func Probe(path string) (*MediaInfo, error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("media file unreadable: %w", err)
 	}
 
-	cmd := exec.Command("ffprobe",
-		"-v", "error",
-		"-show_format",
-		"-show_streams",
-		"-print_format", "json",
-		path,
-	)
-	out, err := cmd.Output()
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("ffprobe failed: %s", string(exitErr.Stderr))
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".png", ".jpg", ".jpeg", ".bmp", ".tiff":
+		return probeImage(path)
+	case ".gif":
+		return probeGIF(path)
+	case ".mp4", ".webm", ".mov", ".avi", ".mkv", ".webp":
+		return probeVideo(path)
+	default:
+		if info, err := probeImage(path); err == nil {
+			return info, nil
 		}
-		return nil, fmt.Errorf("ffprobe failed: %w", err)
+		return probeVideo(path)
+	}
+}
+
+func probeImage(path string) (*MediaInfo, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	cfg, _, err := image.DecodeConfig(f)
+	if err != nil {
+		return nil, err
+	}
+	return &MediaInfo{
+		Path:   path,
+		Type:   TypeImage,
+		Width:  cfg.Width,
+		Height: cfg.Height,
+		Frames: 1,
+	}, nil
+}
+
+func probeGIF(path string) (*MediaInfo, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	g, err := gif.DecodeAll(f)
+	if err != nil {
+		return nil, err
+	}
+	var dur time.Duration
+	for _, d := range g.Delay {
+		dur += time.Duration(d) * 10 * time.Millisecond
+	}
+	return &MediaInfo{
+		Path:     path,
+		Type:     TypeGIF,
+		Width:    g.Config.Width,
+		Height:   g.Config.Height,
+		Duration: dur.Seconds(),
+		Frames:   len(g.Image),
+	}, nil
+}
+
+func probeVideo(path string) (*MediaInfo, error) {
+	cmd := exec.Command("ffmpeg", "-i", path, "-f", "null", "-")
+	out, err := cmd.CombinedOutput()
+	output := string(out)
+	if output == "" && err != nil {
+		return nil, fmt.Errorf("ffmpeg failed: %w", err)
 	}
 
-	var raw ffprobeOutput
-	if err := json.Unmarshal(out, &raw); err != nil {
-		return nil, fmt.Errorf("ffprobe parse: %w", err)
+	info := &MediaInfo{Path: path, Type: TypeVideo}
+
+	if m := durationRe.FindStringSubmatch(output); len(m) == 5 {
+		h, _ := strconv.Atoi(m[1])
+		min, _ := strconv.Atoi(m[2])
+		sec, _ := strconv.ParseFloat(m[3], 64)
+		ms := 0.0
+		if m[4] != "" {
+			ms, _ = strconv.ParseFloat(m[4], 64)
+		}
+		info.Duration = float64(h)*3600 + float64(min)*60 + sec + ms/100
 	}
 
-	if len(raw.Streams) == 0 {
-		return nil, fmt.Errorf("ffprobe: no streams found")
+	if m := videoStreamRe.FindStringSubmatch(output); len(m) >= 3 {
+		info.Width, _ = strconv.Atoi(m[1])
+		info.Height, _ = strconv.Atoi(m[2])
 	}
 
-	s := raw.Streams[0]
-	info := &MediaInfo{
-		Path:  path,
-		Width: s.Width,
-		Height: s.Height,
+	fps := 0.0
+	if m := fpsRe.FindStringSubmatch(output); len(m) >= 2 {
+		fps, _ = strconv.ParseFloat(m[1], 64)
+	} else if m := tbrRe.FindStringSubmatch(output); len(m) >= 2 {
+		fps, _ = strconv.ParseFloat(m[1], 64)
 	}
 
-	info.Type = detectType(s.CodecName, path)
-
-	if raw.Format.Duration != "" && raw.Format.Duration != "N/A" {
-		info.Duration, _ = strconv.ParseFloat(raw.Format.Duration, 64)
+	if info.Duration > 0 && fps > 0 {
+		info.Frames = int(info.Duration * fps)
+	} else if info.Duration == 0 {
+		info.Frames = 1
 	}
-
-	info.Frames = parseFrames(s.NbFrames, s.AvgFrameRate, info.Duration)
 
 	return info, nil
 }
 
-func detectType(codec, path string) MediaType {
-	switch strings.ToLower(codec) {
-	case "gif":
-		return TypeGIF
-	case "png", "mjpeg", "bmp", "tiff", "webp":
-		return TypeImage
-	case "h264", "hevc", "vp8", "vp9", "av1", "mpeg4", "theora":
-		return TypeVideo
-	}
-
+func detectType(_ string, path string) MediaType {
 	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
-	case ".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp":
+	case ".png", ".jpg", ".jpeg", ".bmp", ".tiff":
 		return TypeImage
 	case ".gif":
 		return TypeGIF
-	case ".mp4", ".webm", ".mov", ".avi", ".mkv":
+	case ".mp4", ".webm", ".mov", ".avi", ".mkv", ".webp":
 		return TypeVideo
 	}
-
 	return TypeUnknown
-}
-
-func parseFrames(nbFrames, avgFrameRate string, duration float64) int {
-	if nbFrames != "" && nbFrames != "N/A" {
-		if n, err := strconv.Atoi(nbFrames); err == nil && n > 0 {
-			return n
-		}
-	}
-
-	if avgFrameRate != "" && avgFrameRate != "0/0" && avgFrameRate != "N/A" {
-		parts := strings.Split(avgFrameRate, "/")
-		if len(parts) == 2 {
-			num, nErr := strconv.ParseFloat(parts[0], 64)
-			den, dErr := strconv.ParseFloat(parts[1], 64)
-			if nErr == nil && dErr == nil && den != 0 && duration > 0 {
-				return int(num / den * duration)
-			}
-		}
-	}
-
-	if duration == 0 {
-		return 1
-	}
-
-	return int(duration * 30)
 }

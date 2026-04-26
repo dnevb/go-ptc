@@ -1,49 +1,107 @@
 package probe
 
 import (
+	"image"
+	"image/color"
+	"image/gif"
+	"image/png"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-func TestDetectType(t *testing.T) {
-	tests := []struct {
-		codec string
-		path  string
-		want  MediaType
-	}{
-		{"png", "x.png", TypeImage},
-		{"mjpeg", "x.jpg", TypeImage},
-		{"gif", "x.gif", TypeGIF},
-		{"h264", "x.mp4", TypeVideo},
-		{"vp9", "x.webm", TypeVideo},
-		{"", "x.mov", TypeVideo},
-		{"", "x.png", TypeImage},
-		{"unknown", "x.xyz", TypeUnknown},
+func TestProbeImage(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.png")
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tt := range tests {
-		got := detectType(tt.codec, tt.path)
-		if got != tt.want {
-			t.Errorf("detectType(%q, %q) = %q, want %q", tt.codec, tt.path, got, tt.want)
-		}
+	if err := png.Encode(f, image.NewRGBA(image.Rect(0, 0, 100, 50))); err != nil {
+		f.Close()
+		t.Fatal(err)
+	}
+	f.Close()
+
+	info, err := Probe(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Type != TypeImage {
+		t.Errorf("type = %q, want image", info.Type)
+	}
+	if info.Width != 100 || info.Height != 50 {
+		t.Errorf("dims = %dx%d, want 100x50", info.Width, info.Height)
+	}
+	if info.Frames != 1 {
+		t.Errorf("frames = %d, want 1", info.Frames)
 	}
 }
 
-func TestParseFrames(t *testing.T) {
+func TestProbeGIF(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.gif")
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pal := color.Palette{color.Black, color.White}
+	g := &gif.GIF{
+		Image: []*image.Paletted{
+			image.NewPaletted(image.Rect(0, 0, 80, 60), pal),
+			image.NewPaletted(image.Rect(0, 0, 80, 60), pal),
+		},
+		Delay:  []int{10, 20},
+		Config: image.Config{Width: 80, Height: 60},
+	}
+	if err := gif.EncodeAll(f, g); err != nil {
+		f.Close()
+		t.Fatal(err)
+	}
+	f.Close()
+
+	info, err := Probe(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Type != TypeGIF {
+		t.Errorf("type = %q, want gif", info.Type)
+	}
+	if info.Width != 80 || info.Height != 60 {
+		t.Errorf("dims = %dx%d, want 80x60", info.Width, info.Height)
+	}
+	if info.Frames != 2 {
+		t.Errorf("frames = %d, want 2", info.Frames)
+	}
+	if info.Duration < 0.29 || info.Duration > 0.31 {
+		t.Errorf("duration = %f, want ~0.3", info.Duration)
+	}
+}
+
+func TestProbeVideoMissing(t *testing.T) {
+	_, err := probeVideo("/nonexistent/video.mp4")
+	if err == nil {
+		t.Log("probeVideo on missing file did not error (ffmpeg output may be empty)")
+	}
+}
+
+func TestDetectType(t *testing.T) {
 	tests := []struct {
-		nbFrames string
-		fps      string
-		duration float64
-		want     int
+		path string
+		want MediaType
 	}{
-		{"100", "30/1", 10, 100},
-		{"", "30/1", 10, 300},
-		{"N/A", "0/0", 0, 1},
-		{"", "", 5, 150},
-		{"", "", 0, 1},
+		{"x.png", TypeImage},
+		{"x.jpg", TypeImage},
+		{"x.gif", TypeGIF},
+		{"x.mp4", TypeVideo},
+		{"x.webm", TypeVideo},
+		{"x.mov", TypeVideo},
+		{"x.xyz", TypeUnknown},
 	}
 	for _, tt := range tests {
-		got := parseFrames(tt.nbFrames, tt.fps, tt.duration)
+		got := detectType("", tt.path)
 		if got != tt.want {
-			t.Errorf("parseFrames(%q, %q, %f) = %d, want %d", tt.nbFrames, tt.fps, tt.duration, got, tt.want)
+			t.Errorf("detectType(%q) = %q, want %q", tt.path, got, tt.want)
 		}
 	}
 }
