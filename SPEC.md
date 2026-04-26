@@ -9,6 +9,7 @@ CLI tool `ptc` converts media (images, GIFs, videos) into Plymouth boot-splash t
 - Input: png, jpg, gif, mp4, webm, mov. ? svg.
 - Output: standard Plymouth theme dir (`/usr/share/plymouth/themes/<name>/`).
 - No runtime deps beyond ffmpeg (video/gif), plymouth/plymouthd (preview).
+- ⊥ ffprobe. Probe via ffmpeg -i stderr or Go image/gif/video packages.
 - Boot-safe assets: ≤ 1920×1080, ≤ 256 colors ? user override.
 - Script target: Plymouth Script (JavaScript-like).
 - Minimal code comments
@@ -34,7 +35,7 @@ V8: ∀ extracted frames → dimensions ≤ config.max_res (default 1920×1080).
 ## §T TASKS
 id|status|task|cites
 T1|x|scaffold `cmd/ptc` with cobra, `go.mod`|§C
-T2|x|impl media probe (ffprobe wrap): type, dims, duration, frames|§C
+T2|x|impl media probe (ffmpeg -i / Go packages): type, dims, duration, frames|§C
 T3|x|impl frame extraction: gif→png frames, video→png frames via ffmpeg|V8
 T4|x|impl image resize/normalize pipeline (boot-safe)|V8
 T5|x|impl `ptc create` with flags → generate .plymouth, .script, assets/|V1,V2,V4,V5
@@ -43,6 +44,7 @@ T7|x|impl `.script` validator (token-based, API whitelist)|V4
 T8|x|impl `ptc install` → validate target + copy to system dir|V3,V6,V7
 T9|x|impl `ptc preview` → exec `plymouthd --test`|V6
 T10|x|tests for media probe, frame extraction, validators|§V
+T11|.|remove ffprobe dep, switch probe to ffmpeg stderr / Go decoders|§C
 
 ## §B BUGS
 id|date|cause|fix
