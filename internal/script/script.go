@@ -36,6 +36,7 @@ var whitelist = map[string]bool{
 	"SetMessage":            true,
 	"SetProgress":           true,
 	"function":              true,
+	"if":                    true,
 }
 
 var forbidden = []string{

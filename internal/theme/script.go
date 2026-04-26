@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/dan/plymouth-theme-creator/internal/script"
 )
 
 type ScriptOpts struct {
@@ -51,13 +53,10 @@ func GenerateScript(opts ScriptOpts) (string, error) {
 	return b.String(), nil
 }
 
-// ValidateScript checks asset refs and forbidden tokens.
+// ValidateScript checks asset refs and V4 token whitelist.
 func ValidateScript(content string, assets []string) error {
-	forbidden := []string{"eval", "Function", "XMLHttpRequest", "fetch", "require", "import"}
-	for _, tok := range forbidden {
-		if strings.Contains(content, tok) {
-			return fmt.Errorf("forbidden token: %s", tok)
-		}
+	if err := script.Validate(content); err != nil {
+		return err
 	}
 
 	// V5: every Image("...") basename must exist in assets.
