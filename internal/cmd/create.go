@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/dan/plymouth-theme-creator/internal/theme"
 	"github.com/spf13/cobra"
 )
 
@@ -21,9 +22,20 @@ var createCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		media := args[1:]
-		fmt.Printf("create: name=%s media=%v fps=%d res=%s loop=%v transition=%s out=%s\n",
-			name, media, createFps, createRes, createLoop, createTransition, createOutputDir)
-		return fmt.Errorf("not implemented")
+		opts := theme.CreateOpts{
+			Name:       name,
+			Media:      media,
+			FPS:        createFps,
+			Res:        createRes,
+			Loop:       createLoop,
+			Transition: createTransition,
+			OutputDir:  createOutputDir,
+		}
+		if err := theme.Create(opts); err != nil {
+			return err
+		}
+		fmt.Printf("theme created: %s/%s\n", createOutputDir, name)
+		return nil
 	},
 }
 
